@@ -2,7 +2,7 @@
 
 ## Overview
 
-This is the code for [this](https://www.youtube.com/watch?v=pg9apmwf7og) video on Youtube by Siraj Raval as part of the Deep Learning Nanodegree course with Udacity. We're going to use an encoder-decoder model to generate a MIDI sequence given an input sequence of MIDI ragtime songs.
+This is the code slightly modified from [this](https://github.com/llSourcell/How_to_generate_music_in_tensorflow_LIVE).
 
 ## Dependencies
 

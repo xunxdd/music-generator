@@ -2,13 +2,13 @@
 
 ## Overview
 
-This is the code slightly modified from [this](https://github.com/llSourcell/How_to_generate_music_in_tensorflow_LIVE).
+This is the code slightly modified from [this](https://github.com/llSourcell/How_to_generate_music_in_tensorflow_LIVE). Major changes involve update code to reflect latest Tensorflow api (1.8)
 
 ## Dependencies
 
 The program requires the following dependencies (easy to install using pip):
  * Python 3
- * TensorFlow (tested with v0.10.0rc0. Won't work with previous versions)
+ * tensorflow==1.8.0
  * CUDA (for using gpu, see TensorFlow [installation page](https://www.tensorflow.org/versions/master/get_started/os_setup.html#optional-install-cuda-gpus-on-linux) for more details)
  * Numpy (should be installed with TensorFlow)
  * Mido (midi library)

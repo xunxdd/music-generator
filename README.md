@@ -24,4 +24,4 @@ To visualize the computational graph and the cost with TensorBoard, run `tensorb
 
 ## Credits
 
-Credits for the code go to [Conchylicultor](https://github.com/Conchylicultor/MusicGenerator). I've merely created a wrapper to get people started.
+Credits for the code go to [Conchylicultor](https://github.com/Conchylicultor/MusicGenerator). 

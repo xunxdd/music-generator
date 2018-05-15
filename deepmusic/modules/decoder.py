@@ -95,7 +95,7 @@ class Rnn(DecoderNetwork):
         assert prev_keyboard.get_shape()[axis].value == music.NB_NOTES
         inputs = tf.split(axis, music.NB_NOTES, prev_keyboard)
 
-        outputs, final_state = tf.nn.seq2seq.rnn_decoder(
+        outputs, final_state = tf.contrib.legacy_seq2seq.rnn_decoder(
             decoder_inputs=inputs,
             initial_state=prev_state_enco,
             cell=self.rnn_cell
@@ -180,8 +180,11 @@ class Lstm(DecoderNetwork):
         rnn_cell = tf.nn.rnn_cell.BasicLSTMCell(self.args.hidden_size, state_is_tuple=True)  # Or GRUCell, LSTMCell(args.hidden_size)
         if not self.args.test:  # TODO: Should use a placeholder instead
             rnn_cell = tf.nn.rnn_cell.DropoutWrapper(rnn_cell, input_keep_prob=1.0, output_keep_prob=0.9)  # TODO: Custom values
-        rnn_cell = tf.nn.rnn_cell.MultiRNNCell([rnn_cell] * self.args.num_layers, state_is_tuple=True)
 
+        #rnn_cell = tf.nn.rnn_cell.MultiRNNCell([rnn_cell] * self.args.num_layers, state_is_tuple=True)
+        rnn_cell = tf.contrib.rnn.MultiRNNCell(
+            cells=[tf.contrib.rnn.BasicLSTMCell(self.args.hidden_size, state_is_tuple=True) for i in range(self.args.num_layers)],
+            state_is_tuple=True)
         self.rnn_cell = rnn_cell
 
         # For projecting on the keyboard space

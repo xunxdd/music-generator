@@ -65,7 +65,10 @@ def get_rnn_cell(args, scope_name):
         tf.RNNCell: a cell
     """
     with tf.variable_scope('weights_' + scope_name):
-        rnn_cell = tf.nn.rnn_cell.BasicLSTMCell(args.hidden_size, state_is_tuple=True)  # Or GRUCell, LSTMCell(args.hidden_size)
+        rnn_cell = tf.contrib.rnn.MultiRNNCell(
+            cells=[tf.contrib.rnn.BasicLSTMCell(args.hidden_size, forget_bias=1.0) for i in range(args.num_layers)],
+            state_is_tuple=True)
+        #rnn_cell = tf.nn.rnn_cell.BasicLSTMCell(args.hidden_size, state_is_tuple=True)  # Or GRUCell, LSTMCell(args.hidden_size)
         #rnn_cell = tf.nn.rnn_cell.DropoutWrapper(rnn_cell, input_keep_prob=1.0, output_keep_prob=1.0)  # TODO: Custom values (WARNING: No dropout when testing !!!, possible to use placeholder ?)
-        rnn_cell = tf.nn.rnn_cell.MultiRNNCell([rnn_cell] * args.num_layers, state_is_tuple=True)
+        #rnn_cell = tf.nn.rnn_cell.MultiRNNCell([rnn_cell] * args.num_layers, state_is_tuple=True)
     return rnn_cell

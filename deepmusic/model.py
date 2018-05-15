@@ -163,7 +163,6 @@ class Model:
         """ Create the computational graph
         """
         input_dim = ModuleLoader.batch_builders.get_module().get_input_dim()
-
         # Placeholders (Use tf.SparseTensor with training=False instead) (TODO: Try restoring dynamic batch_size)
         with tf.name_scope('placeholder_inputs'):
             self.inputs = [
@@ -192,6 +191,7 @@ class Model:
 
         # Define the network
         self.loop_processing = ModuleLoader.loop_processings.build_module(self.args)
+        print(self.args)
         def loop_rnn(prev, i):
             """ Loop function used to connect one output of the rnn to the next input.
             The previous input and returned value have to be from the same shape.
@@ -203,12 +203,11 @@ class Model:
                 tf.Tensor: the input at the step i
             """
             next_input = self.loop_processing(prev)
-
             # On training, we force the correct input, on testing, we use the previous output as next input
             return tf.cond(self.use_prev[i], lambda: next_input, lambda: self.inputs[i])
 
         # TODO: Try attention decoder/use dynamic_rnn instead
-        self.outputs, self.final_state = tf.nn.seq2seq.rnn_decoder(
+        self.outputs, self.final_state = tf.contrib.legacy_seq2seq.rnn_decoder(
             decoder_inputs=self.inputs,
             initial_state=None,  # The initial state is defined inside KeyboardCell
             cell=KeyboardCell(self.args),
@@ -235,7 +234,7 @@ class Model:
             self.learning_rate_policy = ModuleLoader.learning_rate_policies.build_module(self.args)  # Load the chosen policies
 
             # TODO: If train on different length, check that the loss is proportional to the length or average ???
-            loss_fct = tf.nn.seq2seq.sequence_loss(
+            loss_fct = tf.contrib.legacy_seq2seq.sequence_loss(
                 self.outputs,
                 self.targets,
                 [tf.constant(self.target_weights_policy.get_weight(i), shape=self.targets[0].get_shape()) for i in range(len(self.targets))],  # Weights
@@ -243,7 +242,7 @@ class Model:
                 average_across_timesteps=True,  # Before: I think it's best for variables length sequences (specially with the target weights=0), isn't it (it implies also that short sequences are less penalized than long ones) ? (TODO: For variables length sequences, be careful about the target weights)
                 average_across_batch=True  # Before: Penalize by sample (should allows dynamic batch size) Warning: need to tune the learning rate
             )
-            tf.scalar_summary('training_loss', loss_fct)  # Keep track of the cost
+            tf.summary.scalar('training_loss', loss_fct)  # Keep track of the cost
 
             self.current_learning_rate = tf.placeholder(tf.float32, [])
 

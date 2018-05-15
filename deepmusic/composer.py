@@ -13,7 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 
-"""
+"""ld
 Music composer. Act as the coordinator. Orchestrate and call the different models, see the readme for more details.
 
 Use python 3
@@ -76,7 +76,7 @@ class Composer:
         # Filename and directories constants
         self.MODEL_DIR_BASE = 'save/model'
         self.MODEL_NAME_BASE = 'model'
-        self.MODEL_EXT = '.ckpt'
+        self.MODEL_EXT = '.ckpt.meta'
         self.CONFIG_FILENAME = 'params.ini'
         self.CONFIG_VERSION = '0.5'  # Ensure to raise a warning if there is a change in the format
 
@@ -110,7 +110,7 @@ class Composer:
 
         # Dataset options
         dataset_args = parser.add_argument_group('Dataset options')
-        dataset_args.add_argument('--dataset_tag', type=str, default='ragtimemusic', help='tag to differentiate which data use (if the data are not present, the program will try to generate from the midi folder)')
+        dataset_args.add_argument('--dataset_tag', type=str, default='jazz', help='tag to differentiate which data use (if the data are not present, the program will try to generate from the midi folder)')
         dataset_args.add_argument('--create_dataset', action='store_true', help='if present, the program will only generate the dataset from the corpus (no training/testing)')
         dataset_args.add_argument('--play_dataset', type=int, nargs='?', const=10, default=None,  help='if set, the program  will randomly play some samples(can be use conjointly with create_dataset if this is the only action you want to perform)')  # TODO: Play midi ? / Or show sample images ? Both ?
         dataset_args.add_argument('--ratio_dataset', type=float, default=0.9, help='ratio of songs between training/testing. The ratio is fixed at the beginning and cannot be changed')
@@ -166,8 +166,8 @@ class Composer:
             self.model = Model(self.args)
 
         # Saver/summaries
-        self.writer = tf.train.SummaryWriter(os.path.join(self.model_dir, 'train'))
-        self.writer_test = tf.train.SummaryWriter(os.path.join(self.model_dir, 'test'))
+        self.writer = tf.summary.FileWriter(os.path.join(self.model_dir, 'train'))
+        self.writer_test = tf.summary.FileWriter(os.path.join(self.model_dir, 'test'))
         self.saver = tf.train.Saver(max_to_keep=200)  # Set the arbitrary limit ?
 
         # TODO: Fixed seed (WARNING: If dataset shuffling, make sure to do that after saving the
@@ -208,12 +208,12 @@ class Composer:
         # Specific training dependent loading (Warning: When restoring a model, we don't restore the progression
         # bar, nor the current batch.)
 
-        merged_summaries = tf.merge_all_summaries()
+        merged_summaries = tf.summary.merge_all()
         if self.glob_step == 0:  # Not restoring from previous run
             self.writer.add_graph(self.sess.graph)  # First time only
 
         print('Start training (press Ctrl+C to save and exit)...')
-
+        self._get_model_name()
         try:  # If the user exit while training, we still try to save the model
             e = 0
             while self.args.num_epochs == 0 or e < self.args.num_epochs:  # Main training loop (infinite if num_epoch==0)
@@ -314,7 +314,7 @@ class Composer:
                 chosen_labels, outputs = self.sess.run(ops, feed_dict)
 
                 model_dir, model_filename = os.path.split(model_name)
-                model_dir = os.path.join(model_dir, self.TESTING_VISUALIZATION_DIR)
+                model_dir = os.path.join(model_dir, self.TESTING_VISUALIZATION_DIR, self.dataset_tag)
                 model_filename = model_filename[:-len(self.MODEL_EXT)] + '-' + name
 
                 # Save piano roll as image (color map red/blue to see the prediction confidence)
@@ -416,6 +416,7 @@ class Composer:
         """
         tqdm.write('Checkpoint reached: saving model (don\'t stop the run)...')
         self._save_params()
+        self._get_model_name()
         self.saver.save(sess, self._get_model_name())  # Put a limit size (ex: 3GB for the model_dir) ?
         tqdm.write('Model saved.')
 
@@ -523,7 +524,6 @@ class Composer:
         print('testing_curve: {}'.format(self.args.testing_curve))
 
         ModuleLoader.print_all(self.args)
-        print()
 
     def _get_model_name(self):
         """ Parse the argument to decide were to save/load the model
@@ -533,8 +533,11 @@ class Composer:
             str: The path and name were the model need to be saved
         """
         model_name = os.path.join(self.model_dir, self.MODEL_NAME_BASE)
+
+
         if self.args.keep_all:  # We do not erase the previously saved model by including the current step on the name
             model_name += '-' + str(self.glob_step)
+        print (model_name + self.MODEL_EXT)
         return model_name + self.MODEL_EXT
 
     def _get_model_list(self):
